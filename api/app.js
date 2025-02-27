@@ -1,0 +1,84 @@
+const express = require('express');
+const morgan = require('morgan');
+const helmet = require('helmet');
+const cors = require('cors');
+const { MongoClient } = require('mongodb');
+
+require('dotenv').config();
+
+const middlewares = require('./middlewares');
+
+const app = express();
+
+const url = process.env.MONGO_URI;
+const client = new MongoClient(url);
+client.connect()
+  .then(() => console.log('Conectado a MongoDB Atlas'))
+  .catch(err => console.error('Error de conexión:', err));
+const db = client.db('restaurante');
+const usersCollection = db.collection('usuarios');
+const ordersCollection = db.collection('pedidos');
+const tablesCollection = db.collection('mesas');
+const foodCollection = db.collection('carta');
+
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(morgan('dev'));
+app.use(helmet());
+app.use(cors());
+
+app.post('/api/login', async (req, res) => {
+  const username = req.body['login-username'];
+  const password = req.body['login-password'];
+
+  try {
+    const user = await usersCollection.findOne({ 
+      usuario: username, 
+      contraseña: password 
+    });
+    
+    if (user) {
+      res.status(200).json({
+        message: "Login exitoso",
+        redirectUrl: "http://localhost/restaurante_front/home.html"
+      });
+    } else {
+      res.status(401).json({ error: "Credenciales inválidas" });
+    }
+  } catch (error) {
+    console.error("Error en el endpoint /api/login:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
+
+app.post('/api/signup', async (req, res) => {
+  const username = req.body['signup-username'];
+  const password = req.body['signup-password'];
+
+  if (!username || !password) {
+    return res.status(400).json({ error: "Todos los campos son obligatorios." });
+  }
+
+  try {
+    const existingUser = await usersCollection.findOne({ usuario: username });
+    if (existingUser) {
+      return res.status(409).json({ error: "El nombre de usuario ya está ocupado." });
+    }
+
+    const newUser = {
+      usuario: username,
+      contraseña: password
+    };
+    
+    await usersCollection.insertOne(newUser);
+    res.status(201).json({ message: "Registro exitoso" });
+  } catch (error) {
+    console.error("Error en el endpoint /api/signup:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
+
+app.use(middlewares.notFound);
+app.use(middlewares.errorHandler);
+
+module.exports = app;
