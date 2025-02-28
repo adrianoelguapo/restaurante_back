@@ -112,6 +112,36 @@ app.post('/api/order', async (req, res) => {
   }
 });
 
+app.get('/api/mesas', async (req, res) => {
+  try {
+    const mesas = await tablesCollection.find().toArray();
+    res.status(200).json(mesas);
+  } catch (error) {
+    console.error("Error en el endpoint /api/mesas:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
+
+app.post('/api/solicitar-mesa', async (req, res) => {
+  console.log("Datos recibidos en /api/solicitar-mesa:", req.body);
+
+  const { nombresolicitante, numeromesa } = req.body;
+
+  if (!nombresolicitante || !numeromesa) {
+      console.log("Solicitud rechazada: faltan datos.");
+      return res.status(400).json({ error: "Faltan datos para la solicitud." });
+  }
+
+  try {
+      const result = await db.collection('solicitudesmesa').insertOne({ nombresolicitante, numeromesa });
+      console.log("Reserva almacenada con éxito:", result.insertedId);
+      res.status(201).json({ message: "Reserva realizada con éxito.", requestId: result.insertedId });
+  } catch (error) {
+      console.error("Error en el endpoint /api/solicitar-mesa:", error);
+      res.status(500).json({ error: "Error interno del servidor." });
+  }
+});
+
 app.use(middlewares.notFound);
 app.use(middlewares.errorHandler);
 
