@@ -3,6 +3,7 @@ const morgan = require('morgan');
 const helmet = require('helmet');
 const cors = require('cors');
 const { MongoClient } = require('mongodb');
+const { ObjectId } = require('mongodb');
 
 require('dotenv').config();
 
@@ -38,9 +39,13 @@ app.post('/api/login', async (req, res) => {
     });
     
     if (user) {
+      let redirectUrl = "http://localhost/restaurante_front/home.html";
+      if (username.toLowerCase() === "admin") {
+        redirectUrl = "http://localhost/restaurante_front/admin.html";
+      }
       res.status(200).json({
         message: "Login exitoso",
-        redirectUrl: "http://localhost/restaurante_front/home.html"
+        redirectUrl: redirectUrl
       });
     } else {
       res.status(401).json({ error: "Credenciales inválidas" });
@@ -50,6 +55,7 @@ app.post('/api/login', async (req, res) => {
     res.status(500).json({ error: "Error interno del servidor" });
   }
 });
+
 
 app.post('/api/signup', async (req, res) => {
   const username = req.body['signup-username'];
@@ -139,6 +145,30 @@ app.post('/api/solicitar-mesa', async (req, res) => {
   } catch (error) {
       console.error("Error en el endpoint /api/solicitar-mesa:", error);
       res.status(500).json({ error: "Error interno del servidor." });
+  }
+});
+
+app.get('/api/orders', async (req, res) => {
+  try {
+    const orders = await ordersCollection.find().toArray();
+    res.status(200).json(orders);
+  } catch (error) {
+    console.error("Error en el endpoint /api/orders:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
+
+app.delete('/api/order/:id', async (req, res) => {
+  try {
+    const result = await ordersCollection.deleteOne({ _id: new ObjectId(req.params.id) });
+    if (result.deletedCount === 1) {
+      res.status(200).json({ message: "Pedido eliminado exitosamente." });
+    } else {
+      res.status(404).json({ error: "Pedido no encontrado." });
+    }
+  } catch (error) {
+    console.error("Error en el endpoint DELETE /api/order/:id:", error);
+    res.status(500).json({ error: "Error interno del servidor." });
   }
 });
 
