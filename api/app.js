@@ -78,6 +78,40 @@ app.post('/api/signup', async (req, res) => {
   }
 });
 
+app.get('/api/carta', async (req, res) => {
+  try {
+    const dishes = await foodCollection.find().toArray();
+    res.status(200).json(dishes);
+  } catch (error) {
+    console.error("Error en el endpoint /api/carta:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
+
+app.post('/api/order', async (req, res) => {
+  const { nombre_solicitante, platos, preciototal } = req.body;
+  
+  if (!nombre_solicitante || !platos || !Array.isArray(platos) || platos.length === 0 || typeof preciototal !== 'number') {
+    return res.status(400).json({ error: "Datos incompletos o inválidos para el pedido." });
+  }
+  
+  try {
+    const result = await ordersCollection.insertOne({
+      nombre_solicitante,
+      platos,
+      preciototal
+    });
+    
+    res.status(201).json({ 
+      message: "Pedido enviado exitosamente.", 
+      orderId: result.insertedId 
+    });
+  } catch (error) {
+    console.error("Error en el endpoint /api/order:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
+
 app.use(middlewares.notFound);
 app.use(middlewares.errorHandler);
 
