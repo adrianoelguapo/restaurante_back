@@ -39,9 +39,9 @@ app.post('/api/login', async (req, res) => {
     });
     
     if (user) {
-      let redirectUrl = "https://restaurante-front-five.vercel.app/home.html";
+      let redirectUrl = "https://restaurante-front-one.vercel.app/home.html";
       if (username.toLowerCase() === "admin") {
-        redirectUrl = "https://restaurante-front-five.vercel.app/admin.html";
+        redirectUrl = "https://restaurante-front-one.vercel.app/admin.html";
       }
       res.status(200).json({
         message: "Login exitoso",
