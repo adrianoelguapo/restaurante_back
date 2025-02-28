@@ -172,6 +172,31 @@ app.delete('/api/order/:id', async (req, res) => {
   }
 });
 
+app.get('/api/table-requests', async (req, res) => {
+  try {
+      const tableRequests = await db.collection('solicitudesmesa').find().toArray();
+      res.status(200).json(tableRequests);
+  } catch (error) {
+      console.error("Error en el endpoint /api/table-requests:", error);
+      res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
+
+app.delete('/api/table-request/:id', async (req, res) => {
+  try {
+      const result = await db.collection('solicitudesmesa').deleteOne({ _id: new ObjectId(req.params.id) });
+      if (result.deletedCount === 1) {
+          res.status(200).json({ message: "Solicitud de mesa eliminada exitosamente." });
+      } else {
+          res.status(404).json({ error: "Solicitud de mesa no encontrada." });
+      }
+  } catch (error) {
+      console.error("Error en el endpoint DELETE /api/table-request/:id:", error);
+      res.status(500).json({ error: "Error interno del servidor." });
+  }
+});
+
+
 app.use(middlewares.notFound);
 app.use(middlewares.errorHandler);
 
